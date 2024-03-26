@@ -1,5 +1,5 @@
 <template>
-    <div>
+    <div v-if="!correcr_reg">
         <div class="header">
             <div class="header-title">Регистрация</div>
             <hr/>
@@ -8,29 +8,30 @@
             <div class="title">Заполните Ваши данные</div>
             <div class="form-container">
                 <form class="name-form">
-                    <input type="text" id="name" class="form-input" placeholder="Имя">
-                    <input type="email" id="email" class="form-input" placeholder="Email">
+                    <input type="text" v-on:input="this.username = $event.target.value" id="name" class="form-input" placeholder="Имя">
+                    <input type="email" v-on:input="this.email = $event.target.value" id="email" class="form-input" placeholder="Email">
                 </form>
                 <form class="post-form">
-                    <select class="form-input" id="post-selector">
-                        <option disabled selected>Должность</option>
-                        <option value="value_1">Value 1</option>
-                        <option value="value_2">Value 2</option>
-                        <option value="value_3">Value 3</option>
+                    <select v-model="role" class="form-input" id="post-selector">
+                        <option value="0" disabled selected>Должность</option>
+                        <option value="1" name="value_1">Value 1</option>
+                        <option value="2" name="value_2">Value 2</option>
+                        <option value="3" name="value_3">Value 3</option>
                     </select>
                 </form>
                 <form class="pass-form">
-                    <input type="password" id="pass" class="form-input" placeholder="Пароль">
-                    <input type="password" id="repeat-pass" class="form-input" placeholder="Повторите пароль">
+                    <input type="password" v-on:input="this.password = $event.target.value" id="pass" class="form-input" placeholder="Пароль">
+                    <input type="password" v-on:input="this.password_repeat = $event.target.value" id="repeat-pass" class="form-input" placeholder="Повторите пароль">
                 </form>
             </div>
+            <ErrorMsg :error_msg="this.error_msg"></ErrorMsg>
             <hr/>
         </div>
         <div class="footer">
             <div class="visibility">
                 <div class="visibility-title">
                     <label class="switch">
-                        <input type="checkbox">
+                        <input v-on:input="this.public = $event.target.value" type="checkbox">
                         <span class="slider"></span>
                     </label>
                     Хотите чтобы Ваш профиль видели другие участники платформы?
@@ -39,22 +40,87 @@
             </div>
             <div class="agreement">
                 <lable class="check-mark">
-                    <input type="checkbox">
+                    <input v-model="agreement" type="checkbox" checked="checked">
                 </lable>
                 <div class="agree-desc">Регистрируясь, Вы соглашаетесь  с политикой конфиденциальности<br/> и обработкой персональных данных</div>
-                <button class="reg-button">Зарегистрироваться</button>
+                <button v-on:click="checkForm()" class="reg-button">Зарегистрироваться</button>
             </div>
         </div>
+    </div>
+    <div v-else>
+        Регистрация пройдена успешно!
     </div>
 </template>
 
 <script>
-    export default {
+    import ErrorMsg from "./ErrorMsg.vue";
+    import axios from 'axios';
 
+    export default {
+        components: {
+            ErrorMsg
+        },
+        data() {
+            return{
+                agreement: true,
+                public: false,
+                username: "",
+                role: 0,
+                email: "",
+                password: "",
+                password_repeat: "",
+                error_msg: "",
+                correcr_reg: false
+            }
+        },
+        methods: {
+            checkForm() {
+                if (!this.username) {
+                    this.error_msg = "Введите имя пользователя";
+                } else if (!this.role) {
+                    this.error_msg = "Выберите должность"
+                } else if (!this.email) {
+                    this.error_msg = "Введите email"
+                } else if (!this.password) {
+                    this.error_msg = "Введите пароль"
+                } else if (!this.password_repeat) {
+                    this.error_msg = "Повторите пароль"
+                }
+                else if (this.password != this.password_repeat) {
+                    this.error_msg = "Пароли не совпадают!";
+                } else if(!this.agreement) {
+                    this.error_msg = "Для регистрации необходимо согласиться с политикой конфиденциальности";
+                } else {
+                    this.error_msg = "";
+                    //Не могу отправить post запрос в никуда
+                    //this.sendPost();
+                    this.correcr_reg = true;
+                }
+            },
+            sendPost() {
+                axios.post('/data', {
+                    public: this.public,
+                    username: this.username,
+                    role: this.role,
+                    email: this.email,
+                    password: this.password,
+                    password_repeat: this.password_repeat
+                })
+                    .then(function (response) {
+                        console.log(response);
+                    })
+                    .catch(function (error) {
+                        console.log(error);
+                    });
+            }
+        }
     }
 </script>
 
 <style scoped>
+    .error-field {
+        background-color: red;
+    }
 
     .header-title {
         font-weight: 700;
